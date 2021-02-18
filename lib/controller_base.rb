@@ -24,6 +24,7 @@ class ControllerBase
     @res.status = 302
     raise 'Double render' if self.already_built_response?
     @res.finish
+    @session.store_session(@res)
     @already_built_response = true
   end
 
@@ -35,6 +36,7 @@ class ControllerBase
     @res.write(content)
     raise 'Double render' if self.already_built_response?
     @res.finish
+    @session.store_session(@res)
     @already_built_response = true
   end
 
@@ -51,6 +53,7 @@ class ControllerBase
 
   # method exposing a `Session` object
   def session
+    @session ||= Session.new(@req)
   end
 
   # use this with the router to call action_name (:index, :show, :create...)
