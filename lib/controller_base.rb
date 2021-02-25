@@ -8,9 +8,10 @@ class ControllerBase
   attr_reader :req, :res, :params
 
   # Setup the controller
-  def initialize(req, res)
+  def initialize(req, res, params)
     @req = req
     @res = res
+    @params = params.merge(req.params)
   end
 
   # Helper method to alias @already_built_response
@@ -24,7 +25,7 @@ class ControllerBase
     @res.status = 302
     raise 'Double render' if self.already_built_response?
     @res.finish
-    @session.store_session(@res)
+    session.store_session(@res)
     @already_built_response = true
   end
 
@@ -36,7 +37,7 @@ class ControllerBase
     @res.write(content)
     raise 'Double render' if self.already_built_response?
     @res.finish
-    @session.store_session(@res)
+    session.store_session(@res)
     @already_built_response = true
   end
 
@@ -58,6 +59,10 @@ class ControllerBase
 
   # use this with the router to call action_name (:index, :show, :create...)
   def invoke_action(name)
+    self.send(name)
+    unless self.already_built_response?
+      self.render(name.to_s)
+    end
   end
 end
 
