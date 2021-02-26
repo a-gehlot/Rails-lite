@@ -1,6 +1,7 @@
 require 'rack'
 require_relative '../lib/controller_base.rb'
 require_relative '../lib/router'
+require_relative '../lib/flash'
 
 # Create an erroneous new dog to test the functionality of your Flash
 
