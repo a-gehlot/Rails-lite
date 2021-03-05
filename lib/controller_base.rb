@@ -3,15 +3,18 @@ require 'active_support/core_ext'
 require 'active_support/inflector'
 require 'erb'
 require_relative './session'
+require_relative './flash'
+require 'securerandom'
 
 class ControllerBase
-  attr_reader :req, :res, :params
+  attr_reader :req, :res, :params, :form_authenticity_token
 
   # Setup the controller
-  def initialize(req, res, params)
+  def initialize(req, res, params = {})
     @req = req
     @res = res
     @params = params.merge(req.params)
+    @@protect_from_forgery ||= false
   end
 
   # Helper method to alias @already_built_response
@@ -65,10 +68,34 @@ class ControllerBase
 
   # use this with the router to call action_name (:index, :show, :create...)
   def invoke_action(name)
+    unless @req.request_method == 'GET' || self.class.protect_from_forgery == false
+      check_authenticity_token
+    else
+      form_authenticity_token
+    end
+
     self.send(name)
+
     unless self.already_built_response?
       self.render(name.to_s)
     end
+  end
+
+  def form_authenticity_token
+    @token ||= SecureRandom.urlsafe_base64 
+    @res.set_cookie('authenticity_token', @token)
+    @token
+  end
+
+  def check_authenticity_token
+    token = @req.cookies['authenticity_token']
+    unless token && token == params['authenticity_token']
+      raise 'Invalid authenticity token'
+    end
+  end
+
+  def self.protect_from_forgery
+    @@protect_from_forgery = true
   end
 end
 
